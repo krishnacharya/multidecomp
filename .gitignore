@@ -1,0 +1,8 @@
+# ignore all .pkl files (pickle)
+*.pkl
+
+# ignore all files .npy files (numpy)
+*.npy
+
+data/*
+*.DS_Store
