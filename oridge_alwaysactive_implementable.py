@@ -25,18 +25,28 @@ class OnlineRidgeImplementable_alwaysactive():
         del self.X_df
         del self.y_df
 
+    def fill_subsequence_losses(self, A_tarr):
+        self.cumloss_groupwise_oridge = []
+        N = A_tarr.shape[1]
+        loss_groupwise_oridge = []
+        loss_oridge_tarr = np.array(self.loss_tarr)
+        for gnum in range(N): # build cumulative loss for  on each group subsequence
+            loss_groupwise_oridge.append(loss_oridge_tarr[A_tarr[:, gnum].astype(bool)]) # select those losses where group gnum active
+            self.cumloss_groupwise_oridge.append(np.cumsum(loss_groupwise_oridge[-1])) #cumulative sum of the previous
+   
     def fill_subsequence_regrets(self, A_tarr, bestsqloss_arr):
         '''
         mask the groups and get subsequence regret for the online ridge model which is always active
         A_tarr has shape size of (dataframe x number of groups)
         bestsqloss_arr has the best in hindsight sqloss cumulative for each group, (is a list)
         '''
+        # TODO use the fill_subsequence_losses here and ensure nothing breaks!, skip this because bestsqloss_arr takes time to build
+        self.cumloss_groupwise_oridge = []
         self.cumreg_groupwise_oridge = []
         N = A_tarr.shape[1]
         loss_groupwise_oridge = []
-        cumloss_groupwise_oridge = []
         loss_oridge_tarr = np.array(self.loss_tarr)
         for gnum in range(N): # build cumulative loss for  on each group subsequence
             loss_groupwise_oridge.append(loss_oridge_tarr[A_tarr[:, gnum].astype(bool)]) # select those losses where group gnum active
-            cumloss_groupwise_oridge.append(np.cumsum(loss_groupwise_oridge[-1])) #cumulative sum of the previous
-            self.cumreg_groupwise_oridge.append(cumloss_groupwise_oridge[-1] - np.array(bestsqloss_arr[gnum])) #bestsquare loss for that group subsequence still the same
+            self.cumloss_groupwise_oridge.append(np.cumsum(loss_groupwise_oridge[-1])) #cumulative sum of the previous
+            self.cumreg_groupwise_oridge.append(self.cumloss_groupwise_oridge[-1] - np.array(bestsqloss_arr[gnum])) #bestsquare loss for that group subsequence still the same

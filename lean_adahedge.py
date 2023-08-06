@@ -15,9 +15,9 @@ class Adanormal_sleepingexps:
     self.loss_ada_tarr = [] # array of scalars, each is loss of adanormal hedge in round t
     self.cuml_loss_adagroup_tarr = [np.zeros(N)] #  first term on the lhs in multigroup regret(algorithms performnace on subsequence), prev loss + (loss_ada * active or not),
     self.cuml_loss_curve = [] #filled in build_cumloss_curve one for each expert
-    self.cuml_regret_curve = []
+    # self.cuml_regret_curve = []
 
-    # next 3 are important for Adanormal hedge
+    # next 3 are important for Adanormal hedge (in the Anh paper)
     self.inst_reg_tarr = [] #array of numpy array, each is instantaneous regret of each expert in round t
     self.cuml_reg_tarr = [np.zeros(N)] # cumulative regret for each expert vector is appended, R in the Adanormal hedge paper
     self.abs_reg_tarr = [np.zeros(N)] # absolute values of instantanoues regret summed up for each expert is appended, C in the Adanormal hedge paper
@@ -68,7 +68,8 @@ class Adanormal_sleepingexps:
     self.abs_reg_tarr.append(self.abs_reg_tarr[-1] + abs(self.inst_reg_tarr[-1])) #update abs reg cumulative sum
     self.time += 1
 
-  def build_cumloss_curve(self, bestsqloss_arr, A_tarr):
+  # def build_cumloss_curve(self, bestsqloss_arr, A_tarr):
+  def build_cumloss_curve(self, A_tarr):
     '''
       CALLED once at the end to compute regret curve for Adanormal hedge
       bestsqloss list of size |G| has the best square loss on the subsequence for each group, each element of bestsqloss is a list itself of length Tg
@@ -80,7 +81,7 @@ class Adanormal_sleepingexps:
     # all_active = np.array(self.active_tarr) #numpy array of active_tarr
     for ind in range(self.N): #ind is group number 0...N-1
       self.cuml_loss_curve.append(cl_adagroup[:, ind][A_tarr[:, ind].astype(bool)]) # shape Tgx1 collects the cumulative loss curve of adanormal hedge on subsequence given by group #ind, only picks roudns in which group active
-      self.cuml_regret_curve.append(self.cuml_loss_curve[-1] - np.array(bestsqloss_arr[ind])) #bestsqloss has same dimensions as self.cuml_loss_curve[-1] the current group
+      # self.cuml_regret_curve.append(self.cuml_loss_curve[-1] - np.array(bestsqloss_arr[ind])) #bestsqloss has same dimensions as self.cuml_loss_curve[-1] the current group
       # TODO ^ 
   
   def cleanup_for_saving(self):
@@ -100,5 +101,5 @@ class Adanormal_sleepingexps:
     self.abs_reg_tarr = None
     for gnum in range(self.N):
       self.cuml_loss_curve[gnum] = np.array(self.cuml_loss_curve[gnum])
-      self.cuml_regret_curve[gnum] = np.array(self.cuml_regret_curve[gnum])
+      # self.cuml_regret_curve[gnum] = np.array(self.cuml_regret_curve[gnum])
       self.experts[gnum].make_all_numpyarr() # makes the internal variables in the meta experts, namely loss_tarr and y_predarr into numpy arrays

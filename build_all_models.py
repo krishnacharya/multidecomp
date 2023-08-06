@@ -52,6 +52,7 @@ class All_linear_models: # can make it an abstract class that extends from all_m
             oridge_implementable: oridge_alwaysactive_implementable.OnlineRidgeImplementable_alwaysactive object
         '''
         def build_bls(): # best square loss used to compute regret
+            # TODO skip this, long to build, just compare squares losses sum
             bls = BestLS_Hindsight_Together(self.N)
             for t in tqdm(range(self.T)):
                 bls.update(A_t[t], X_dat.iloc[[t]], y_dat.iloc[t])
@@ -67,14 +68,16 @@ class All_linear_models: # can make it an abstract class that extends from all_m
                 Anh.get_prob_over_experts(A_t[t]) #get probability over meta-experts
                 Anh.update_metaexps_loss(A_t[t], X_dat.iloc[[t]], y_dat.iloc[t]) # update internal states of the meta-experts
             # fill in Anh cumulative regret curve before saving, to reduce disk space
-            Anh.build_cumloss_curve(di_to_fill['bls'].best_sqloss, A_t)
+            # Anh.build_cumloss_curve(di_to_fill['bls'].best_sqloss, A_t)
+            Anh.build_cumloss_curve(A_t)
             Anh.cleanup_for_saving() #compact size after cleanup, only essential external varaibles saved
             di_to_fill['Anh'] = Anh
             joblib.dump(Anh, self.dir + 'models/Anh/'+ self.filename +'.pkl')
         
         def build_oridge_implementable():
             oridge_implementable = OnlineRidgeImplementable_alwaysactive(X_dat, y_dat)
-            oridge_implementable.fill_subsequence_regrets(A_t, di_to_fill['bls'].best_sqloss)
+            oridge_implementable.fill_subsequence_losses(A_t)
+            # oridge_implementable.fill_subsequence_regrets(A_t, di_to_fill['bls'].best_sqloss)
             di_to_fill['oridge_implementable'] = oridge_implementable
             joblib.dump(oridge_implementable, self.dir + 'models/oridge_implementable/'+ self.filename + '.pkl')
 
@@ -108,6 +111,6 @@ class All_linear_models: # can make it an abstract class that extends from all_m
         df_oh = numeric_scaler(df_oh, df_oh.columns)
         X_dat = df_oh.drop('PINCP', axis=1) # dropping the income column
         y_dat = pd.DataFrame(df_oh['PINCP']) 
-        build_bls()
+        # build_bls()
         build_Anh()
         build_oridge_implementable()
