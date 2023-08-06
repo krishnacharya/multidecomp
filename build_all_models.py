@@ -13,18 +13,18 @@ class All_linear_models: # can make it an abstract class that extends from all_m
     '''
         TODO add class documentation
     '''
-    def __init__(self, dir : str, filename: str, data_fil: pd.DataFrame, cat_cols_sig: list, groups : list):
+    def __init__(self, dir : str, filename: str, df_oh: pd.DataFrame, cat_cols_sig: list, groups : list):
         '''
             dir: name of head of directory, e.g. ./one_hotencoded
             filename: name of file
-            data_fil: the dataframe with income <= 200k, no other processing done
+            df_oh: the dataframe with income <= 200k, no other processing done
             cat_cols_sig: list with names of all the categorical columns to be one-hot encoded
             groups: all the sensitive groups with underscore _ , e.g. ['SEX_1','SEX_2', 'RAC1P_1'....]
         '''
         self.timestamp = time.strftime("%Y%m%d-%H%M%S")
         self.dir = dir
         self.filename = filename + self.timestamp
-        self.data_fil = data_fil
+        self.df_oh = df_oh
         self.cat_cols_sig = cat_cols_sig
         self.groups = groups
         
@@ -81,18 +81,18 @@ class All_linear_models: # can make it an abstract class that extends from all_m
             di_to_fill['oridge_implementable'] = oridge_implementable
             joblib.dump(oridge_implementable, self.dir + 'models/oridge_implementable/'+ self.filename + '.pkl')
 
-        # first one-hot encode self.data_fil using cat_cols_sig
-        df_oh = one_hot(self.data_fil, self.cat_cols_sig)
-        df_oh.drop(self.cat_cols_sig, axis=1, inplace = True) # drop OCCP, RACE, SEX, MAR..all categorical
+        # first one-hot encode self.data_fil_oh using cat_cols_sig
+        # df_oh = one_hot(self.data_fil, self.cat_cols_sig)
+        # df_oh.drop(self.cat_cols_sig, axis=1, inplace = True) # drop OCCP, RACE, SEX, MAR..all categorical
         # shuffle if said to do so
         if to_shuffle:
             self.filename = self.filename + "_shuffled_"
-            df_oh = df_oh.sample(frac = 1, random_state = seed)
+            self.df_oh = self.df_oh.sample(frac = 1, random_state = seed)
         else:
             self.filename = self.filename + "_unshuffled_"
             
         # now collect build the A_t numpy array before dropping those columns (which can happen if dropped = True)
-        A_tdf = df_oh[self.groups]
+        A_tdf = self.df_oh[self.groups]
         A_tdf['alwayson'] = 1 # adds the always active / using all data "group"
         A_t = A_tdf.to_numpy()
         di_to_fill['A_t'] = A_t
@@ -101,16 +101,16 @@ class All_linear_models: # can make it an abstract class that extends from all_m
         
         if to_drop_groups:
             self.filename = self.filename + "_dropped_"
-            df_oh.drop(self.groups, axis = 1, inplace=True) # drop the onehot SEX_1, SEX_2, RAC1P_1,...
+            self.df_oh.drop(self.groups, axis = 1, inplace=True) # drop the onehot SEX_1, SEX_2, RAC1P_1,...
         else:
             self.filename = self.filename + "_undropped_"
 
         np.save(self.dir + 'nparrays/' + self.filename , A_t) # save the A_t array on disk
 
         # now min max scale all the features, all in [0, 1], and 
-        df_oh = numeric_scaler(df_oh, df_oh.columns)
-        X_dat = df_oh.drop('PINCP', axis=1) # dropping the income column
-        y_dat = pd.DataFrame(df_oh['PINCP']) 
+        self.df_oh = numeric_scaler(self.df_oh, self.df_oh.columns)
+        X_dat = self.df_oh.drop('PINCP', axis=1) # dropping the income column
+        y_dat = pd.DataFrame(self.df_oh['PINCP']) 
         # build_bls()
-        build_Anh()
         build_oridge_implementable()
+        build_Anh()
