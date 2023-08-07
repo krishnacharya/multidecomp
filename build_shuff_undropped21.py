@@ -42,8 +42,9 @@ from folktables.load_acs import state_list
 #     dataset[catg] = dataset[catg].astype(int)
 
 # data_fil = dataset[dataset['PINCP'] <= 2e5]
-data_fil = pd.read_pickle('data_fil.pkl')
-print("here", data_fil.shape)
+# data_fil = pd.read_pickle('data_fil.pkl')
+sparse_data_oh = pd.read_pickle('./data_frames/sparse_acs_mm_oh.pkl')
+print("here", sparse_data_oh.shape)
 
 cat_cols_sig = ['OCCP', 'SCHL', 'ST', 'JWTRNS', 'DRAT', 'COW', 'SEX', 'RELSHIPP', 'POBP', 'ENG', 'MAR', 'RAC1P']
 groups = ['SEX_1', 'SEX_2', 'RAC1P_1','RAC1P_2','RAC1P_3','RAC1P_4','RAC1P_5','RAC1P_6', 'RAC1P_7','RAC1P_8','RAC1P_9']
@@ -52,9 +53,9 @@ dir_name = './onehot_encoded/' # head directory for saving results
 filename = 'allstates2021_buildall_lossonly_'
 groups = ['SEX_1', 'SEX_2', 'RAC1P_1','RAC1P_2','RAC1P_3','RAC1P_4','RAC1P_5','RAC1P_6', 'RAC1P_7','RAC1P_8','RAC1P_9']
 
-alm_obj = All_linear_models(dir_name, filename, data_fil, cat_cols_sig, groups)
+alm_obj = All_linear_models(dir_name, filename, sparse_data_oh.iloc[:100000], cat_cols_sig, groups)
 di_temp = {}
-di_temp['bls'] = 1
-di_temp['Anh'] = 2
-di_temp['oridge_implementable'] = 3
+# di_temp['bls'] = 1
+# di_temp['Anh'] = 2
+# di_temp['oridge_implementable'] = 3
 alm_obj.build_models(di_to_fill = di_temp, to_shuffle=True, to_drop_groups = False)
