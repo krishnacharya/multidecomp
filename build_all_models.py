@@ -85,7 +85,6 @@ class All_linear_models: # can make it an abstract class that extends from all_m
         # df_oh = one_hot(self.data_fil, self.cat_cols_sig)
         # df_oh.drop(self.cat_cols_sig, axis=1, inplace = True) # drop OCCP, RACE, SEX, MAR..all categorical
         # shuffle if said to do so
-        print("before shuffling")
         if to_shuffle:
             self.filename = self.filename + "_shuffled_"
             self.df_oh = self.df_oh.sample(frac = 1, random_state = seed)
@@ -99,7 +98,6 @@ class All_linear_models: # can make it an abstract class that extends from all_m
         # di_to_fill['A_t'] = A_t
         self.T  = A_t.shape[0] # shape of A_t is T x len(number of sens groups) + 1
         self.N  = A_t.shape[1]
-        print("before dropping")
         if to_drop_groups:
             self.filename = self.filename + "_dropped_"
             self.df_oh.drop(self.groups, axis = 1, inplace=True) # drop the onehot SEX_1, SEX_2, RAC1P_1,...
@@ -113,7 +111,5 @@ class All_linear_models: # can make it an abstract class that extends from all_m
         X_dat = self.df_oh.drop('PINCP', axis=1) # dropping the income column
         y_dat = pd.DataFrame(self.df_oh['PINCP']) 
         # build_bls()
-        print("before oridge")
         build_oridge_implementable()
-        print("before Anh")
         build_Anh()
