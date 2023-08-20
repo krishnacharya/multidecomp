@@ -26,19 +26,24 @@ X_train = df_train.drop(['PINCP'], axis=1, inplace = False)
 y_test = df_test['PINCP']
 X_test = df_test.drop(['PINCP'], axis=1, inplace = False)
 
-max_depth = np.arange(1, 20)
-splitter = ['best', 'random']
+max_depth = np.arange(8, 20)
+splitter = ['best']
+min_samples_split = np.arange(2, 10)
+min_samples_leaf = np.arange(1, 10)
+max_features = ['auto', 'sqrt', 'log2']
 
-# grid_dt = {'max_depth': max_depth,
-#                'splitter': splitter,
-#                'min_samples_leaf': min_samples_leaf,
-#                'min_samples_split': min_samples_split}
 grid_dt = {'max_depth': max_depth,
-               'splitter': splitter
+               'splitter': splitter,
+               'min_samples_split': min_samples_split,
+               'min_samples_leaf': min_samples_leaf,
+               'max_features': max_features
           }
+# grid_dt = {'max_depth': max_depth,
+#                'splitter': splitter
+#           }
 
 dtree_reg = tree.DecisionTreeRegressor()
-grid_search = GridSearchCV(estimator = dtree_reg, param_grid = grid_dt, n_jobs=2, verbose=10)
+grid_search = GridSearchCV(estimator = dtree_reg, param_grid = grid_dt, n_jobs=4, verbose=10, cv = 3)
 grid_result = grid_search.fit(X_train, y_train)
 print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
 # Best: 0.493419 using {'max_depth': 13, 'splitter': 'best'}
