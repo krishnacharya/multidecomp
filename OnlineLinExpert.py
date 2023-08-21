@@ -25,7 +25,7 @@ class Online_linearexpert(Expert):
         this is another external function to be called to update the model in round t
         '''
         self.model_rr.learn_many(X_t, y_t) # update internal state for ridge, X_t is dataframe, y_t is series both have one row/element
-        self.loss_tarr.append((self.y_predarr[-1] - y_t[0])**2) #ypred 
+        self.loss_tarr.append((self.y_predarr[-1] - y_t.iloc[0])**2) #ypred 
 
     def make_all_numpyarr(self):
         '''

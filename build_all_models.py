@@ -8,8 +8,7 @@ from OnlineLinExpert import *
 from OnlineLinModel_alwaysactive_implementable import *
 
 class build_Anh: #maybe make an abstract class for building models
-    def __init__(self, dir_name : str, filename: str, X_dat: pd.DataFrame, y_dat: pd.DataFrame, \
-                A_t: np.ndarray, cat_cols_sig: list[str], groups : list[str], experts: list[Expert]):
+    def __init__(self, dir_name : str, filename: str, X_dat: pd.DataFrame, y_dat: pd.DataFrame,   A_t: np.ndarray, experts: list[Expert]):
         '''
         Assuming that the dataframe has been processed already (make dataframe management class pipeline)
 
@@ -25,8 +24,9 @@ class build_Anh: #maybe make an abstract class for building models
         self.y_dat = y_dat
         self.A_t = A_t
         self.T = A_t.shape[0]
-        self.cat_cols_sig = cat_cols_sig
-        self.groups = groups
+        self.N = A_t.shape[1]
+        # self.cat_cols_sig = cat_cols_sig
+        # self.groups = groups
         self.experts = experts
         self.build()
 
@@ -35,10 +35,10 @@ class build_Anh: #maybe make an abstract class for building models
         for t in tqdm(range(self.T)):
             Anh.get_prob_over_experts(self.A_t[t]) #get probability over meta-experts
             Anh.update_metaexps_loss(self.A_t[t], self.X_dat.iloc[[t]], self.y_dat.iloc[[t]]) # update internal states of the meta-experts
-            Anh.build_cumloss_curve(self.A_t)
-            Anh.cleanup_for_saving() #compact size after cleanup, only essential external varaibles saved
-            save_loc = f'''./{self.dir_name}/models/Anh_sepbuild/{self.filename}.pkl'''
-            joblib.dump(Anh, save_loc)
+        Anh.build_cumloss_curve(self.A_t)
+        Anh.cleanup_for_saving() #compact size after cleanup, only essential external varaibles saved
+        save_loc = f'''./{self.dir_name}/models/Anh_sepbuild/{self.filename}.pkl'''
+        joblib.dump(Anh, save_loc)
 
 class build_baseline_alwayson:
     def __init__(self, dir_name : str, filename: str, X_dat: pd.DataFrame, y_dat: pd.DataFrame, \
@@ -64,6 +64,7 @@ class build_baseline_alwayson:
         for t in tqdm(range(self.T)):
             self.implementable_expert.get_ypred_t(self.X_dat.iloc[[t]])
             self.implementable_expert.update_t(self.X_dat.iloc[[t]], self.y_dat.iloc[[t]])
+        print("finished filling loss")
         self.implementable_expert.fill_subsequence_losses(self.A_t) # finds losses on masked subsequences for each group
         save_loc = f'''./{self.dir_name}/models/linear_sepbuild/{self.filename}_l2pen={self.l2_pen}.pkl'''
         joblib.dump(self.implementable_expert, save_loc)
