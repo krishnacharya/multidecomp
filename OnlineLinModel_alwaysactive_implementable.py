@@ -13,10 +13,6 @@ class OnlineLinearModel_alwaysactive(ImplementableExpert):
         self.model = linear_model.LinearRegression(l2 = l2_pen)
         self.loss_tarr = []
         self.y_predarr = []
-        # self.cumreg_groupwise_oridge = []
-        # self.X_df = X_df
-        # self.y_df = y_df
-        # self.T = len(X_df)
 
     def get_ypred_t(self, X_t):
         ypred = np.clip(self.model.predict_many(X_t).iloc[0], 0.0, 1.0) # ypred here is a numpy float scalar
@@ -26,13 +22,6 @@ class OnlineLinearModel_alwaysactive(ImplementableExpert):
     def update_t(self, X_t, y_t):
         self.model.learn_many(X_t, y_t)
         self.loss_tarr.append((self.y_predarr[-1] - y_t.iloc[0])**2) #ypred 
-    # def fill_loss(self):
-    #     for t in tqdm(range(self.T)):
-    #         y_temp_ridge = np.clip(self.model.predict_many(self.X_df.iloc[[t]]).iloc[0], 0.0, 1.0)
-    #         self.model.learn_many(self.X_df.iloc[[t]], self.y_df.iloc[t])
-    #         self.loss_tarr.append((y_temp_ridge - self.y_df.iloc[t][0])**2)
-    #     del self.X_df
-    #     del self.y_df
 
     def fill_subsequence_losses(self, A_t):
         self.cumloss_groupwise_oridge = []

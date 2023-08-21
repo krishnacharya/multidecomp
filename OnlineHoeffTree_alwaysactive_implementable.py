@@ -3,13 +3,13 @@ from tqdm import tqdm
 from ImplementableExpertAbstract import *
 from skmultiflow.trees import HoeffdingTreeRegressor
 import pandas as pd
-class HoeffdingTree_alwaysactive(ImplementableExpert):
+class HoeffdingTree(ImplementableExpert):
     '''
     Online Hoeffding tree, this is not a meta expert,
     its implementable
     '''
     def __init__(self):
-        self.name = "Hoeffding tree skmultiflow always active"
+        self.name = "Hoeffding tree skmultiflow"
         self.model = HoeffdingTreeRegressor()
         self.loss_tarr = []
         self.y_predarr = []

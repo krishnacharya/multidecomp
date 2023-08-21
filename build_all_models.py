@@ -25,20 +25,19 @@ class build_Anh: #maybe make an abstract class for building models
         self.A_t = A_t
         self.T = A_t.shape[0]
         self.N = A_t.shape[1]
-        # self.cat_cols_sig = cat_cols_sig
-        # self.groups = groups
         self.experts = experts
         self.build()
 
     def build(self):
-        Anh = Adanormal_sleepingexps(self.N, self.experts) #adanormal hedge
+        self.Anh = Adanormal_sleepingexps(self.N, self.experts) #adanormal hedge
         for t in tqdm(range(self.T)):
-            Anh.get_prob_over_experts(self.A_t[t]) #get probability over meta-experts
-            Anh.update_metaexps_loss(self.A_t[t], self.X_dat.iloc[[t]], self.y_dat.iloc[[t]]) # update internal states of the meta-experts
-        Anh.build_cumloss_curve(self.A_t)
-        Anh.cleanup_for_saving() #compact size after cleanup, only essential external varaibles saved
-        save_loc = f'''./{self.dir_name}/models/Anh_sepbuild/{self.filename}.pkl'''
-        joblib.dump(Anh, save_loc)
+            self.Anh.get_prob_over_experts(self.A_t[t]) #get probability over meta-experts
+            self.Anh.update_metaexps_loss(self.A_t[t], self.X_dat.iloc[[t]], self.y_dat.iloc[[t]]) # update internal states of the meta-experts
+        self.Anh.build_cumloss_curve(self.A_t)
+        self.Anh.cleanup_for_saving() #compact size after cleanup, only essential external varaibles saved
+        save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
+        # joblib.dump(self.Anh, save_loc)
+        
 
 class build_baseline_alwayson:
     def __init__(self, dir_name : str, filename: str, X_dat: pd.DataFrame, y_dat: pd.DataFrame, \
@@ -54,8 +53,6 @@ class build_baseline_alwayson:
         self.y_dat = y_dat
         self.A_t = A_t 
         self.T = A_t.shape[0]
-        # self.cat_cols_sig = cat_cols_sig
-        # self.groups = groups
         self.l2_pen = l2_pen
         self.implementable_expert = implementable_expert
         self.build()
@@ -66,8 +63,8 @@ class build_baseline_alwayson:
             self.implementable_expert.update_t(self.X_dat.iloc[[t]], self.y_dat.iloc[[t]])
         print("finished filling loss")
         self.implementable_expert.fill_subsequence_losses(self.A_t) # finds losses on masked subsequences for each group
-        save_loc = f'''./{self.dir_name}/models/linear_sepbuild/{self.filename}_l2pen={self.l2_pen}.pkl'''
-        joblib.dump(self.implementable_expert, save_loc)
+        save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
+        # joblib.dump(self.implementable_expert, save_loc)
 
 class All_linear_models: # can make it an abstract class that extends from all_models, but TODO for later
     '''
