@@ -1,4 +1,5 @@
-from sklearn.preprocessing import MinMaxScaler, OrdinalEncoder, TargetEncoder, StandardScaler, OneHotEncoder
+from sklearn.preprocessing import MinMaxScaler, OrdinalEncoder,StandardScaler, OneHotEncoder
+# from sklearn.preprocessing import TargetEncoder
 import pandas as pd
 def numeric_scaler(df, cols):
     '''
