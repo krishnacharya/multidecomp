@@ -1,14 +1,15 @@
 import pandas as pd
-from utils import *
+from bilevel.utils import *
 import numpy as np
 import joblib
 import time
-from lean_adahedge import *
-from OnlineLinExpert import *
-from OnlineLinModel_alwaysactive_implementable import *
+from tqdm import tqdm
+from bilevel.Adahedge import *
+from bilevel.ExpertsAbstract import Expert
+from bilevel.utils import  fill_subsequence_losses
 
-class build_Anh: #maybe make an abstract class for building models
-    def __init__(self, dir_name : str, filename: str, X_dat: pd.DataFrame, y_dat: pd.DataFrame,   A_t: np.ndarray, experts: list[Expert]):
+class build_Anh:
+    def __init__(self, dir_name : str, filename: str, A_t: np.ndarray, experts: list[Expert]):
         '''
         Assuming that the dataframe has been processed already (make dataframe management class pipeline)
 
@@ -20,8 +21,8 @@ class build_Anh: #maybe make an abstract class for building models
         self.timestamp = time.strftime("%Y%m%d-%H%M%S")
         self.dir_name = dir_name
         self.filename = filename + self.timestamp
-        self.X_dat = X_dat
-        self.y_dat = y_dat
+        # self.X_dat = X_dat
+        # self.y_dat = y_dat
         self.A_t = A_t
         self.T = A_t.shape[0]
         self.N = A_t.shape[1]
@@ -29,42 +30,42 @@ class build_Anh: #maybe make an abstract class for building models
         self.build()
 
     def build(self):
-        self.Anh = Adanormal_sleepingexps(self.N, self.experts) #adanormal hedge
+        self.Anh = Adanormal_sleepingexps(self.A_t, self.experts) #adanormal hedge, experts already have dataframes
         for t in tqdm(range(self.T)):
-            self.Anh.get_prob_over_experts(self.A_t[t]) #get probability over meta-experts
-            self.Anh.update_metaexps_loss(self.A_t[t], self.X_dat.iloc[[t]], self.y_dat.iloc[[t]]) # update internal states of the meta-experts
-        self.Anh.build_cumloss_curve(self.A_t)
-        self.Anh.cleanup_for_saving() #compact size after cleanup, only essential external varaibles saved
+            self.Anh.get_prob_over_experts(t) #get probability over meta-experts
+            self.Anh.update_metaexps_loss(t) # update internal states of the meta-experts
+        self.Anh.build_cumloss_curve()
+        self.Anh.cleanup() #compact size after cleanup, only essential external varaibles saved
         save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
-        # joblib.dump(self.Anh, save_loc)
+        joblib.dump(self.Anh, save_loc)
         
 
 class build_baseline_alwayson:
-    def __init__(self, dir_name : str, filename: str, X_dat: pd.DataFrame, y_dat: pd.DataFrame, \
-                A_t: np.ndarray, implementable_expert: ImplementableExpert, l2_pen = 1.0):
+    def __init__(self, dir_name : str, filename: str, A_t: np.ndarray, expert: Expert):
         '''
             implementable expert function class matches the one in Anh meta experts
             for e.g. if least squares as baseline, then Anh meta experts are also LS
+
+        expert already has dataframe reference in it
         '''
         self.timestamp = time.strftime("%Y%m%d-%H%M%S")
         self.dir_name = dir_name
         self.filename = filename + self.timestamp
-        self.X_dat = X_dat
-        self.y_dat = y_dat
-        self.A_t = A_t 
+        # self.X_dat = X_dat
+        # self.y_dat = y_dat
+        self.A_t = A_t
         self.T = A_t.shape[0]
-        self.l2_pen = l2_pen
-        self.implementable_expert = implementable_expert
+        self.expert = expert
         self.build()
     
     def build(self):
         for t in tqdm(range(self.T)):
-            self.implementable_expert.get_ypred_t(self.X_dat.iloc[[t]])
-            self.implementable_expert.update_t(self.X_dat.iloc[[t]], self.y_dat.iloc[[t]])
-        print("finished filling loss")
-        self.implementable_expert.fill_subsequence_losses(self.A_t) # finds losses on masked subsequences for each group
+            self.expert.get_ypred_t(t)
+            self.expert.update_t(t)
+        self.expert.cumloss_groupwise = fill_subsequence_losses(self.expert, self.A_t)
+        self.expert.cleanup()
         save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
-        # joblib.dump(self.implementable_expert, save_loc)
+        joblib.dump(self.expert, save_loc)
 
 class All_linear_models: # can make it an abstract class that extends from all_models, but TODO for later
     '''

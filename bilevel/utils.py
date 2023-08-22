@@ -3,6 +3,7 @@ from sklearn.preprocessing import MinMaxScaler, OrdinalEncoder,StandardScaler, O
 import pandas as pd
 import pickle
 import numpy as np
+from bilevel.ExpertsAbstract import Expert
 def numeric_scaler(df, cols):
     '''
     df: pandas dataframe
@@ -82,7 +83,7 @@ def load_pickle(file_source):
     pickle_in = open(file_source,"rb")
     return pickle.load(pickle_in)
 
-def fill_subsequence_losses(expert, A_t) -> list[np.ndarray]:
+def fill_subsequence_losses(expert : Expert, A_t : np.ndarray) -> list[np.ndarray]:
     cumloss_groupwise = []
     N = A_t.shape[1]
     loss_groupwise = []

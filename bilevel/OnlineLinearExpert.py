@@ -1,7 +1,7 @@
 from river import linear_model
 import numpy as np
 import pandas as pd
-from ExpertsAbstract import Expert # abstract class
+from bilevel.ExpertsAbstract import Expert # abstract class
 
 class OnlineLinearExpert(Expert):
     '''
@@ -14,6 +14,7 @@ class OnlineLinearExpert(Expert):
         self.y_predarr = []
         self.X_dat = X_dat # this just makes a reference to the dataframe, not actually copying it
         self.y_dat = y_dat
+        self.cumloss_groupwise = None # this is for the expert's loss when masked on subsequences
 
     def get_ypred_t(self, t):
         '''
@@ -34,3 +35,5 @@ class OnlineLinearExpert(Expert):
     def cleanup(self):
         self.X_dat = None
         self.y_dat = None
+        self.loss_tarr = np.array(self.loss_tarr)
+        self.y_predarr = np.array(self.y_predarr)
