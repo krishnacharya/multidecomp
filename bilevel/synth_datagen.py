@@ -29,11 +29,16 @@ class SynthGenLinear:
         self.feat_hi = kwargs['feat_hi']
         self.w_lo = kwargs['w_lo']
         self.w_hi = kwargs['w_hi']
-
+        self.label_noise_width = kwargs['label_noise_width']
+        self.drop_sensitive = kwargs['drop_sensitive']
         self.get_feat_uniform()
         self.get_A_t()
         self.get_labels()
         self.df_synlinear = self.get_dataframe()
+        self.put_active_labels_dataframe()
+    
+    def get_feat_gaussian_skewed(self) -> np.ndarray:
+        pass
 
     def get_feat_uniform(self) -> np.ndarray:
         '''           
@@ -58,7 +63,7 @@ class SynthGenLinear:
         self.A_t = np.hstack([get_group_indicators(prob_list) for prob_list in self.prob_dict.values()])
         return self.A_t
     
-    def get_labels(self, label_noise_width = 100) -> np.ndarray:
+    def get_labels(self) -> np.ndarray:
         '''
         NEEDS get features to be called before this is called
         Parameters
@@ -68,15 +73,31 @@ class SynthGenLinear:
         '''
         self.weights = np.random.uniform(low = self.w_lo, high = self.w_hi, size = (self.dim, self.Ng)) # shape is (dim, # of groups)
         self.labels_allg = np.matmul(self.feat_dat, self.weights)
-        noise_gaussian = np.random.normal(scale = label_noise_width, size = (self.samples, self.Ng))
-        print(noise_gaussian[0])
+        noise_gaussian = np.random.normal(scale = self.label_noise_width, size = (self.samples, self.Ng))
         return self.labels_allg + noise_gaussian
 
-    def get_dataframe(self, drop_sensitive = True) -> pd.DataFrame:
-        feat_names = ['x_'+str(i) for i in range(self.dim)]
-        label_names = ['y_' + st for st in self.all_groupnames]
-        if drop_sensitive:
-            return pd.DataFrame(np.hstack((self.feat_dat, self.labels_allg)), columns = feat_names + label_names) 
+    def get_dataframe(self) -> pd.DataFrame:
+        self.df_feat_names = ['x_'+str(i) for i in range(self.dim)]
+        self.df_label_names = ['y_' + st for st in self.all_groupnames] # y_male, y_female, y_white,...
+        self.df = None
+        if self.drop_sensitive:
+            self.df =  pd.DataFrame(np.hstack((self.feat_dat, self.labels_allg)), columns = self.df_feat_names + self.df_label_names) 
+            return self.df
         else:
-            group_ind = ['g_' + st for st in self.all_groupnames]
-            return pd.DataFrame(np.hstack((self.feat_dat, self.A_t, self.labels_allg)), columns= feat_names + group_ind + label_names)
+            self.group_ind = ['g_' + st for st in self.all_groupnames]
+            self.df = pd.DataFrame(np.hstack((self.feat_dat, self.A_t, self.labels_allg)), columns= self.df_feat_names + self.group_ind + self.df_label_names)
+            return self.df
+
+    def put_active_labels_dataframe(self) -> None:
+        '''
+            generates a column in self.df, which will contain a nparray, this list has all the active group labels
+        '''
+        binary_masked = (self.df[self.df_label_names] * self.A_t) # y_t part of dataframe multiplied by A_t mask
+        active_indices = binary_masked.apply(np.flatnonzero, axis=1) # get the non zero value positions in the above
+        self.df['active_labels'] = None
+        self.df['bin_masked_labels'] = None
+        for i, ai in enumerate(active_indices):
+            self.df.at[i, 'active_labels'] = self.df[self.df_label_names].iloc[i, ai].to_numpy()
+            self.df.at[i, 'bin_masked_labels'] = (self.df[self.df_label_names].iloc[i] * self.A_t[i]).to_numpy()
+        return self.df
+        
