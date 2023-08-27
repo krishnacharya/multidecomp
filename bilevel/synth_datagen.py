@@ -18,23 +18,27 @@ class SynthGenLinear:
             w_lo, w_hi: bounds for Uniform distribution on weights
 
         '''
-        self.samples = kwargs['samples']
-        self.dim = kwargs['dim']
-        self.group_dict = kwargs['group_dict']
-        self.prob_dict = kwargs['prob_dict']
-        list2d = [li for li in  self.group_dict.values()]
-        self.all_groupnames = list(itertools.chain(*list2d))
-        self.Ng = len(self.all_groupnames)
-        self.feat_lo = kwargs['feat_lo']
-        self.feat_hi = kwargs['feat_hi']
-        self.w_lo = kwargs['w_lo']
-        self.w_hi = kwargs['w_hi']
+        self.samples = kwargs['samples'] # int
+        self.dim = kwargs['dim'] # int
+        self.group_dict = kwargs['group_dict'] # dict
+        self.prob_dict = kwargs['prob_dict'] # dict
+        list2d = [li for li in  self.group_dict.values()] 
+        self.all_groupnames = list(itertools.chain(*list2d)) # list of all group names
+        self.Ng = len(self.all_groupnames) # int number of groups
+        self.feat_lo = kwargs['feat_lo'] # float X_lo for uniform
+        self.feat_hi = kwargs['feat_hi'] # float X_hi for uniform
+        self.add_linear_mapping = kwargs['add_linear_mapping'] #boolean
+        self.w_lo = kwargs['w_lo'] # float w_lo for uniform weight, used in matmul(X, w)
+        self.w_hi = kwargs['w_hi'] # float w_hi
+        self.add_quad_mapping = kwargs['add_quad_mapping'] #boolean
+        self.S_lo = kwargs['S_lo'] # float, used in x^T S x, quadratic
+        self.S_hi = kwargs['S_hi'] # float
         self.label_noise_width = kwargs['label_noise_width']
         self.drop_sensitive = kwargs['drop_sensitive']
 
         self.get_feat_uniform()
         self.get_A_t()
-        self.get_weights()
+        # self.get_weights()
         self.get_labels()
         self.get_dataframe()
         self.aggregate_group_labels()
@@ -65,21 +69,32 @@ class SynthGenLinear:
         self.A_t = np.hstack([get_group_indicators(prob_list) for prob_list in self.prob_dict.values()])
         return self.A_t
     
-    def get_weights(self) -> np.ndarray:
-        self.weights = np.random.uniform(low = self.w_lo, high = self.w_hi, size = (self.dim, self.Ng)) # shape is (dim, # of groups)
-        return self.weights
+    # def get_weights(self) -> np.ndarray:
+    #     self.weights = np.random.uniform(low = self.w_lo, high = self.w_hi, size = (self.dim, self.Ng)) # shape is (dim, # of groups)
+    #     return self.weights
     
     def get_labels(self) -> np.ndarray:
         '''
         NEEDS get features to be called before this is called
-        Parameters
-            w_lo, w_hi : bounds for uniform distribution U[w_lo, w_hi] on weights
         Returns
-            labels for each group, using its weight, shape (# samples, # groups)
+            labels for each group (#samples, #number of groups)
         '''
-        self.labels_allg = np.matmul(self.feat_dat, self.weights)  # shape (# samples, # groups)
-        noise_gaussian = np.random.normal(scale = self.label_noise_width, size = (self.samples, self.Ng))
-        return self.labels_allg + noise_gaussian
+        def add_linear():
+            self.wlin = np.random.uniform(low = self.w_lo, high = self.w_hi, size = (self.dim, self.Ng))
+            self.labels_allg += np.matmul(self.feat_dat, self.wlin) # rhs has shape (# samples, # group)
+        
+        def add_quad():
+            self.Smat = np.random.uniform(low = self.S_lo, high = self.S_hi, size = (self.Ng, self.dim, self.dim))
+            for g in range(self.Ng):
+                self.labels_allg[:, g] += (self.feat_dat.dot(self.Smat[g])*self.feat_dat).sum(axis=1) # rhs has shape (number of samples,)  # https://stackoverflow.com/questions/18541851/calculate-vt-a-v-for-a-matrix-of-vectors-v              
+        
+        self.labels_allg = np.zeros((self.samples, self.Ng))
+        if self.add_linear_mapping:
+            add_linear()
+        if self.add_quad_mapping:
+            add_quad()
+        self.labels_allg += np.random.normal(scale = self.label_noise_width, size = (self.samples, self.Ng)) # adding gaussian noise
+        return self.labels_allg
 
     def get_dataframe(self) -> pd.DataFrame:
         self.df_feat_names = ['x_'+str(i) for i in range(self.dim)]
@@ -92,6 +107,7 @@ class SynthGenLinear:
             self.group_ind = ['g_' + st for st in self.all_groupnames]
             self.df = pd.DataFrame(np.hstack((self.feat_dat, self.A_t, self.labels_allg)), columns= self.df_feat_names + self.group_ind + self.df_label_names)
             return self.df
+
     def aggregate_group_labels(self) -> None:
         '''
             aggregates all the active group labels in 4 different ways
@@ -103,6 +119,7 @@ class SynthGenLinear:
         '''
         def set_dominance_permutation():
             self.dperm = np.random.permutation(self.Ng)
+
         self.masked_mult = np.ma.masked_array(self.A_t, mask = self.A_t == 0) *  self.labels_allg
         self.mean_ar = np.ma.getdata(np.mean(self.masked_mult, axis = 1))
         self.min_ar = np.ma.getdata(np.min(self.masked_mult, axis = 1))
@@ -114,8 +131,9 @@ class SynthGenLinear:
         self.mm_dperm = self.masked_mult[:, self.dperm] #masked multiplication permuted columns
         first_nomask_index = (np.ma.getmask(self.mm_dperm) == False).argmax(axis=1) #get first non masked element location, this is the label
         self.df['y_dperm_active'] = self.mm_dperm[np.arange(self.samples), first_nomask_index]
-        
+
         #ilocs below are slow, just work with fast nummpy element wise multiplication above
+        
         # binary_masked = (self.df[self.df_label_names] * self.A_t) # y_t part of dataframe multiplied by A_t mask
         # active_indices = binary_masked.apply(np.flatnonzero, axis=1) # get the non zero value positions in the above
         # self.df['active_labels'] = None
