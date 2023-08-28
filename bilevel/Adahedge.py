@@ -84,7 +84,7 @@ class Adanormal_sleepingexps:
     '''
     self.proboverexps_tarr = None
     self.loss_vec_tarr = None
-    self.loss_ada_tarr = None
+    # self.loss_ada_tarr = None
     self.cuml_loss_adagroup_tarr = None
     self.inst_reg_tarr = None
     self.cuml_reg_tarr = None
