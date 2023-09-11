@@ -11,7 +11,8 @@ class Adanormal_sleepingexps:
     self.l_t = np.zeros((self.T, self.N)) # loss of each expert, in each round
     self.loss_ada_t_arr = np.zeros(self.T) # stores scalar loss of ada in each round
     # self.cuml_loss_adagroup_tarr = [np.zeros(self.N)] #  first term on the lhs in multigroup regret(algorithms performnace on subsequence), prev loss + (loss_ada * active or not),
-    self.cuml_loss_curve = [] #filled in build_cumloss_curve one for each expert
+    self.cumloss_groupwise_ada = [] #filled in build_cumloss_curve one for each expert
+    self.cumloss_groupwise_metaexp = []
 
     # next 3 are important for Adanormal hedge (in the Anh paper)
     self.r_t = np.zeros(self.N) #array of numpy array, each is instantaneous regret of each expert in round t
@@ -75,12 +76,14 @@ class Adanormal_sleepingexps:
       Build ada normal cumulative loss on each subsequence defined by groups
       term1 in the multigroup regret (performance of algorithm on subsequences)
     '''
-    loss_ada_allgroups = self.loss_ada_t_arr.reshape(-1, 1) * self.A_t # reshaped loss_ada_t_arr to shape (T, 1) so that brodcasted
-    cl_adagroup = np.cumsum(loss_ada_allgroups, axis = 0) # sum along rows
+    self.cumloss_ada_allgroups = np.cumsum(self.loss_ada_t_arr.reshape(-1, 1) * self.A_t, axis = 0) # reshaped loss_ada_t_arr to shape (T, 1) so that brodcasted
+    self.cumloss_meta_exps = np.cumsum(self.l_t, axis = 0)
+    # cl_adagroup = np.cumsum(self.loss_ada_allgroups, axis = 0) # sum along rows
     # cl_adagroup = np.array(self.cuml_loss_adagroup_tarr)[1:]
     for ind in range(self.N): #ind is group number 0...N-1
-      self.cuml_loss_curve.append(cl_adagroup[:, ind][self.A_t[:, ind].astype(bool)]) # shape Tgx1 collects the cumulative loss curve of adanormal hedge on subsequence given by group #ind, only picks roudns in which group active
-
+      self.cumloss_groupwise_ada.append(self.cumloss_ada_allgroups[:, ind][self.A_t[:, ind].astype(bool)]) # shape Tgx1 collects the cumulative loss curve of adanormal hedge on subsequence given by group #ind, only picks roudns in which group active
+      self.cumloss_groupwise_metaexp.append(self.cumloss_meta_exps[:, ind][self.A_t[:, ind].astype(bool)]) # not actually implementable
+  
   def cleanup(self):
     '''
       CALL only after build_cumloss_curve(.,.)
@@ -95,5 +98,5 @@ class Adanormal_sleepingexps:
     self.R_t = None
     self.C_t = None
     for gnum in range(self.N):
-      self.cuml_loss_curve[gnum] = np.array(self.cuml_loss_curve[gnum])
+      self.cumloss_groupwise_ada[gnum] = np.array(self.cumloss_groupwise_ada[gnum])
       self.experts[gnum].cleanup() # makes the internal variables in the meta experts, namely loss_tarr and y_predarr into numpy arrays
