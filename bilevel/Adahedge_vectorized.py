@@ -64,7 +64,6 @@ class Adanormal_sleepingexps:
         self.l_t[t][index] = self.experts[index].loss_tarr[-1] # loss of each expert (index) in round t
     l_t_hat = np.dot(self.p_t_arr[t], self.l_t[t]) #lthat = p_{t,i} dot l_{t,i}, scalar
     self.loss_ada_t_arr[t] = l_t_hat
-    # self.cuml_loss_adagroup_tarr.append(self.cuml_loss_adagroup_tarr[-1] + (self.l_t_hat * a_t)) #groupwise cumulative loss
     self.r_t = (l_t_hat - self.l_t[t]) * a_t # instantaneous regret, shape (N,)
     self.R_t += self.r_t #update regret cumulative sum
     self.C_t += abs(self.r_t) #update abs reg cumulative sum
@@ -78,9 +77,7 @@ class Adanormal_sleepingexps:
     '''
     self.cumloss_ada_allgroups = np.cumsum(self.loss_ada_t_arr.reshape(-1, 1) * self.A_t, axis = 0) # reshaped loss_ada_t_arr to shape (T, 1) so that brodcasted
     self.cumloss_meta_exps = np.cumsum(self.l_t, axis = 0)
-    # cl_adagroup = np.cumsum(self.loss_ada_allgroups, axis = 0) # sum along rows
-    # cl_adagroup = np.array(self.cuml_loss_adagroup_tarr)[1:]
-    for ind in range(self.N): #ind is group number 0...N-1
+    for ind in range(self.N):
       self.cumloss_groupwise_ada.append(self.cumloss_ada_allgroups[:, ind][self.A_t[:, ind].astype(bool)]) # shape Tgx1 collects the cumulative loss curve of adanormal hedge on subsequence given by group #ind, only picks roudns in which group active
       self.cumloss_groupwise_metaexp.append(self.cumloss_meta_exps[:, ind][self.A_t[:, ind].astype(bool)]) # not actually implementable
   
@@ -92,8 +89,6 @@ class Adanormal_sleepingexps:
       Also numpify's the required variables for external use, joblib is efficient with
       numpy arrays
     '''
-    # self.p_t_arr = None
-    # self.l_t = None
     self.r_t = None
     self.R_t = None
     self.C_t = None

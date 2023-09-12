@@ -5,7 +5,7 @@ def relu_ew(M): #must be numpy array, does max(0,.) elementwise
 
 class Adanormal_sleepingexps:
   def __init__(self, A_t: np.ndarray, experts:list[Expert]):
-    self.A_t = A_t # has shape T x |G|  
+    self.A_t = A_t # has shape T x |G|
     self.N = A_t.shape[1] # number of meta sleeping experts
     self.experts = experts # these already have dataframes within them
     self.proboverexps_tarr = [] # array of numpy arrays, each numpy array is probability distribution over the meta experts at time t

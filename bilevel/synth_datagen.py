@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import random
 import itertools
+from bilevel.utils import numeric_scaler
 #  samples = 10000, dim = 20,  group_dict : dict = None, 
 #                         feat_lo = 0.0, feat_hi = 1.0
 class SynthGenLinear:
@@ -23,7 +24,7 @@ class SynthGenLinear:
         self.group_dict = kwargs['group_dict'] # dict
         self.prob_dict = kwargs['prob_dict'] # dict
         list2d = [li for li in  self.group_dict.values()] 
-        self.all_groupnames = list(itertools.chain(*list2d)) # list of all group names
+        self.all_groupnames = list(itertools.chain(*list2d)) # list of all group names # TODO add always active or not
         self.Ng = len(self.all_groupnames) # int number of groups
         self.feat_lo = kwargs['feat_lo'] # float X_lo for uniform
         self.feat_hi = kwargs['feat_hi'] # float X_hi for uniform
@@ -63,6 +64,7 @@ class SynthGenLinear:
         ---
         Returns numpy.ndarray of shape (#samples x # of groups)
         '''
+        # TODO add always active or not
         def get_group_indicators(prob_list: list) -> list[np.ndarray]:
             inds = np.eye(len(prob_list)) # indicators e.g for prob list of len 3, (1, 0, 0), (0, 1, 0), (0, 0, 1)
             return np.array(random.choices(population=inds, weights=prob_list, k = self.samples))
@@ -119,7 +121,7 @@ class SynthGenLinear:
         '''
         def set_dominance_permutation():
             self.dperm = np.random.permutation(self.Ng)
-
+        # TODO scaled back each y in 0-1
         self.masked_mult = np.ma.masked_array(self.A_t, mask = self.A_t == 0) *  self.labels_allg
         self.mean_ar = np.ma.getdata(np.mean(self.masked_mult, axis = 1))
         self.min_ar = np.ma.getdata(np.min(self.masked_mult, axis = 1))
@@ -131,6 +133,10 @@ class SynthGenLinear:
         self.mm_dperm = self.masked_mult[:, self.dperm] #masked multiplication permuted columns
         first_nomask_index = (np.ma.getmask(self.mm_dperm) == False).argmax(axis=1) #get first non masked element location, this is the label
         self.df['y_dperm_active'] = self.mm_dperm[np.arange(self.samples), first_nomask_index]
+
+        # the code here is just to scale each y in 0,1 minmax scale
+        self.df_label_names = [col for col in self.df.columns if 'y_' in col]
+        self.df = numeric_scaler(self.df, self.df_label_names)
 
         #ilocs below are slow, just work with fast nummpy element wise multiplication above
         
