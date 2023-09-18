@@ -42,7 +42,7 @@ class Groupwise_over_seeds:
                 self.dic_res_base[gname].append(base) # stores gnmaes cumloss at end, will have 10 valeus for 10 random seeds
                 self.dic_res_Anh[gname].append(ada)
                 
-        # this dictionary has results of base, Anh across different shuffles
+        # this dictionary has cumulative loss of base, Anh across different shuffles
         self.dic_res_base = defaultdict(list)
         self.dic_res_Anh = defaultdict(list)
 
@@ -57,8 +57,7 @@ class Groupwise_over_seeds:
 
             dirname_base = './models_adult/baseline/'
             filename = 'manual_ridge_seed='+ str(seed)+ ' '
-            b_ridgebase = build_baseline_alwayson(dirname_base, filename, \
-                          A_t_shuf_np, Manual_inv_LinearExpert(X_dat_np, y_dat_np, l2_pen = l2_pen))
+            b_ridgebase = build_baseline_alwayson(dirname_base, filename, A_t_shuf_np, Manual_inv_LinearExpert(X_dat_np, y_dat_np, l2_pen = l2_pen))
             dirname_Anh = './models_adult/Anh/'
             experts = [Manual_inv_LinearExpert(X_dat_np, y_dat_np, l2_pen = l2_pen) for _ in range(self.N)]
             b_Anh = build_Anh(dirname_Anh, filename, A_t_shuf_np, experts)
@@ -88,38 +87,37 @@ class Groupwise_over_seeds:
             yerr = group_bar_plot_df[['std_base', 'std_Anh']].to_numpy().T
             group_bar_plot_df[['mean_base', 'mean_Anh']].plot(kind='bar', yerr=yerr, alpha=0.85, error_kw=dict(ecolor='k'), capsize=3)
             plt.legend(labels = ['Baseline', 'Anh'], bbox_to_anchor=(0, 1.02, 0.4,0.2), loc ='lower left', mode='expand', ncol = 2)
+            plt.ylabel('cumulative loss')
             plt.show()
     
     def build_regret_curve(self):
         def get_Anh_regret_best_hindsight(cl_ada_g:np.array, X_dat_g:pd.DataFrame, \
                                          y_dat_g:pd.DataFrame, pos_g : np.array) -> np.array: # for a single group on single run, find regret wrt best in hind
-            sse = []
+            sse = [] # sum of squared errors till that pos p
             for p in pos_g:
                 X_batch = X_dat_g[:p]
                 y_batch = y_dat_g[:p]
-                
                 # Using sklearn
                 # lr = LinearRegression()
                 # lr.fit(X_batch, y_batch)
                 # sse.append(np.sum((lr.predict(X_batch) - y_batch)**2))
-                
+
                 # Using scipy
                 X_batch_np = X_batch.to_numpy()
                 y_batch_np = y_batch.to_numpy()
                 theta_ls, _, _, _ = lstsq(X_batch_np, y_batch_np)
                 y_pred_ls = X_batch_np @ theta_ls
                 sse.append(np.sum((y_pred_ls - y_batch_np)**2))
-
             sse = np.array(sse)
             reg_g = cl_ada_g[pos_g] - sse # only returning regret on num_points in Tg sequence
             return reg_g
 
-        self.pos = [] # linspace for each group
+        self.pos = [] # linspace for each group, doesnt depend on shuffling order, its just poitns along Tg
         for Tg in self.group_sizes: # setting the positions along Tg for the regret curve 
-            num_points = min(100, Tg)
+            num_points = min(100, Tg) # TODO change this to custom integer passed in build_regret_curve
             self.pos.append(np.linspace(Tg // num_points, Tg-1, dtype = int, num = num_points))
 
-        self.regret_Anh_groupwise_array = [[0 for x in range(self.num_runs)] for y in range(self.N)] # N rows for N groups, 10 cols (10 rouns)
+        self.regret_Anh_groupwise_array = [[0 for x in range(self.num_runs)] for y in range(self.N)] # N rows, 10 columns for 10 seeds
         for ind, b_Anh in enumerate(self.Anh_obj_list): # corresponding b_Anh has the Anh obj for that random seed
             seed = self.rand_seeds[ind] # use this to get the X_dat_g, y_dat_g
             A_t_shuf = self.A_t.sample(frac=1, random_state = seed)
@@ -127,7 +125,7 @@ class Groupwise_over_seeds:
             y_dat_shuf = self.y_dat.sample(frac=1, random_state = seed)
             for g_ind, gname in enumerate(self.group_names):
                 indices_g = (A_t_shuf[gname] == 1)
-                X_dat_g = X_dat_shuf[indices_g]
+                X_dat_g = X_dat_shuf[indices_g] #only has gname==1 active rows
                 y_dat_g = y_dat_shuf[indices_g]
                 self.regret_Anh_groupwise_array[g_ind][ind] = get_Anh_regret_best_hindsight(b_Anh.Anh.cumloss_groupwise_ada[g_ind], X_dat_g, y_dat_g, self.pos[g_ind])
         
