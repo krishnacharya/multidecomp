@@ -4,7 +4,8 @@ import numpy as np
 import joblib
 import time
 from tqdm import tqdm
-from bilevel.Adahedge import *
+# from bilevel.Adahedge import Adanormal_sleepingexps
+from bilevel.Adahedge_vectorized import Adanormal_sleepingexps
 from bilevel.ExpertsAbstract import Expert
 from bilevel.utils import  fill_subsequence_losses
 
@@ -21,8 +22,6 @@ class build_Anh:
         self.timestamp = time.strftime("%Y%m%d-%H%M%S")
         self.dir_name = dir_name
         self.filename = filename + self.timestamp
-        # self.X_dat = X_dat
-        # self.y_dat = y_dat
         self.A_t = A_t
         self.T = A_t.shape[0]
         self.N = A_t.shape[1]
@@ -30,7 +29,8 @@ class build_Anh:
         self.build()
 
     def build(self):
-        self.Anh = Adanormal_sleepingexps(self.A_t, self.experts) #adanormal hedge, experts already have dataframes
+        # self.Anh = Adanormal_sleepingexps(self.A_t, self.experts) #adanormal hedge, experts already have dataframes
+        self.Anh = Adanormal_sleepingexps(self.A_t, self.experts)
         for t in tqdm(range(self.T)):
             self.Anh.get_prob_over_experts(t) #get probability over meta-experts
             self.Anh.update_metaexps_loss(t) # update internal states of the meta-experts
@@ -39,20 +39,16 @@ class build_Anh:
         save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
         joblib.dump(self.Anh, save_loc)
         
-
 class build_baseline_alwayson:
     def __init__(self, dir_name : str, filename: str, A_t: np.ndarray, expert: Expert):
         '''
             implementable expert function class matches the one in Anh meta experts
             for e.g. if least squares as baseline, then Anh meta experts are also LS
-
         expert already has dataframe reference in it
         '''
         self.timestamp = time.strftime("%Y%m%d-%H%M%S")
         self.dir_name = dir_name
         self.filename = filename + self.timestamp
-        # self.X_dat = X_dat
-        # self.y_dat = y_dat
         self.A_t = A_t
         self.T = A_t.shape[0]
         self.expert = expert
@@ -67,6 +63,7 @@ class build_baseline_alwayson:
         save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
         joblib.dump(self.expert, save_loc)
 
+"""
 class All_linear_models: # can make it an abstract class that extends from all_models, but TODO for later
     '''
         TODO add class documentation
@@ -171,3 +168,4 @@ class All_linear_models: # can make it an abstract class that extends from all_m
         build_oridge_implementable()
         build_Anh()
 
+"""

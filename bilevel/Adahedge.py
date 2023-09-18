@@ -5,7 +5,7 @@ def relu_ew(M): #must be numpy array, does max(0,.) elementwise
 
 class Adanormal_sleepingexps:
   def __init__(self, A_t: np.ndarray, experts:list[Expert]):
-    self.A_t = A_t # has shape T x |G|  
+    self.A_t = A_t # has shape T x |G|
     self.N = A_t.shape[1] # number of meta sleeping experts
     self.experts = experts # these already have dataframes within them
     self.proboverexps_tarr = [] # array of numpy arrays, each numpy array is probability distribution over the meta experts at time t
@@ -73,7 +73,6 @@ class Adanormal_sleepingexps:
     for ind in range(self.N): #ind is group number 0...N-1
       self.cuml_loss_curve.append(cl_adagroup[:, ind][self.A_t[:, ind].astype(bool)]) # shape Tgx1 collects the cumulative loss curve of adanormal hedge on subsequence given by group #ind, only picks roudns in which group active
 
-  
   def cleanup(self):
     '''
       CALL only after build_cumloss_curve(.,.)
@@ -84,12 +83,12 @@ class Adanormal_sleepingexps:
     '''
     self.proboverexps_tarr = None
     self.loss_vec_tarr = None
-    self.loss_ada_tarr = None
+    self.loss_ada_tarr = np.array(self.loss_ada_tarr)
     self.cuml_loss_adagroup_tarr = None
     self.inst_reg_tarr = None
     self.cuml_reg_tarr = None
     self.abs_reg_tarr = None
-    self.A_t = None
+    # self.A_t = None
     for gnum in range(self.N):
       self.cuml_loss_curve[gnum] = np.array(self.cuml_loss_curve[gnum])
       self.experts[gnum].cleanup() # makes the internal variables in the meta experts, namely loss_tarr and y_predarr into numpy arrays
