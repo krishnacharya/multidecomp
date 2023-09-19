@@ -36,6 +36,9 @@ class SynthGenLinear:
         self.S_hi = kwargs['S_hi'] # float
         self.label_noise_width = kwargs['label_noise_width']
         self.drop_sensitive = kwargs['drop_sensitive']
+        self.fixed_seed = kwargs['fixed_seed'] # for reproducibility
+        np.random.seed(self.fixed_seed) # global seed for all numpy randomness
+        random.seed(self.fixed_seed) # global seed for all python randomness
 
         self.get_feat_uniform()
         self.get_A_t()
