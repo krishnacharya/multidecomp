@@ -36,8 +36,8 @@ class build_Anh:
             self.Anh.update_metaexps_loss(t) # update internal states of the meta-experts
         self.Anh.build_cumloss_curve()
         self.Anh.cleanup() #compact size after cleanup, only essential external varaibles saved
-        save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
-        joblib.dump(self.Anh, save_loc)
+        # save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
+        # joblib.dump(self.Anh, save_loc) # removed saving of anh object
         
 class build_baseline_alwayson:
     def __init__(self, dir_name : str, filename: str, A_t: np.ndarray, expert: Expert):
@@ -60,8 +60,8 @@ class build_baseline_alwayson:
             self.expert.update_t(t)
         self.expert.cumloss_groupwise = fill_subsequence_losses(self.expert, self.A_t)
         self.expert.cleanup()
-        save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
-        joblib.dump(self.expert, save_loc)
+        # save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
+        # joblib.dump(self.expert, save_loc)
 
 """
 class All_linear_models: # can make it an abstract class that extends from all_models, but TODO for later
