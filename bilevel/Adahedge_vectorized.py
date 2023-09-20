@@ -56,14 +56,14 @@ class Adanormal_sleepingexps:
     t is the row of the dataframe/time step
     '''
     a_t = self.A_t[t]
-    l_t_hat = 0 # loss of anh in round t
     for index, active in enumerate(a_t): # this can be parallelized/MAP operation from mapreduce, for now sequential
       if active: #if group is active (1), SIMULATE running it, i.e. get its prediction, and tell it the adversary's generate label y_t
         self.experts[index].get_ypred_t(t) #simulate getting prediction from meta expert
         self.experts[index].update_t(t)
         self.l_t[t][index] = self.experts[index].loss_tarr[-1] # loss of each expert (index) in round t
-    l_t_hat = np.dot(self.p_t_arr[t], self.l_t[t]) #lthat = p_{t,i} dot l_{t,i}, scalar
-    self.loss_ada_t_arr[t] = l_t_hat
+    l_t_hat = np.dot(self.p_t_arr[t], self.l_t[t]) #lthat = p_{t,i} dot l_{t,i}, scalar; Expected loss of Anh in round t
+    # self.loss_ada_t_arr[t] = l_t_hat # changing this to be some random weighted pick instead of expectaion above l_t_hat
+    self.loss_ada_t_arr[t] = np.random.choice(self.l_t[t], size=1, p = self.p_t_arr[t])[0] # random variable whose expectation is l_t_hat
     self.r_t = (l_t_hat - self.l_t[t]) * a_t # instantaneous regret, shape (N,)
     self.R_t += self.r_t #update regret cumulative sum
     self.C_t += abs(self.r_t) #update abs reg cumulative sum
