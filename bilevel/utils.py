@@ -4,6 +4,17 @@ import pandas as pd
 import pickle
 import numpy as np
 from bilevel.ExpertsAbstract import Expert
+import pickle
+
+def save_ob(name, obj):
+    with open(name, 'wb') as handle:
+        pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        
+def load_ob(name):
+    with open(name, 'rb') as handle:
+        obj = pickle.load(handle)
+    return obj
+
 def numeric_scaler(df, cols):
     '''
     df: pandas dataframe

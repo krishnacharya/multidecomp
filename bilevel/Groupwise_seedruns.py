@@ -136,7 +136,7 @@ def plot_subgroups(gwise_obj: BuildGroupwise_diffseeds, subgroups_list : list):
         plt.ylabel('cumulative loss')
         plt.show()
     
-def plot_regret_curve_with_std(gwise_obj: BuildGroupwise_diffseeds):
+def plot_regret_curve_with_std(gwise_obj: BuildGroupwise_diffseeds, dir_name:str):
     for g_ind, gname in enumerate(gwise_obj.group_names):
         gwise_obj.regret_Anh_groupwise_array[g_ind] = np.array(gwise_obj.regret_Anh_groupwise_array[g_ind]) # all 10 values in the row have same dim, so can make np array
         gwise_obj.regret_Base_groupwise_array[g_ind] = np.array(gwise_obj.regret_Base_groupwise_array[g_ind])
@@ -153,4 +153,5 @@ def plot_regret_curve_with_std(gwise_obj: BuildGroupwise_diffseeds):
         plt.xlabel('time')
         plt.ylabel('Regret')
         plt.title(gname)
+        plt.savefig(dir_name + '/regret_'+ gname +'.pdf')
         plt.show()
