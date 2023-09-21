@@ -78,7 +78,7 @@ class BuildGroupwise_diffseeds:
 
     def build_regret_curve(self):
         def get_Anh_regret_best_hindsight(cl_ada_g:np.array, cl_base_g: np.array, \
-                                         X_dat_g:pd.DataFrame, y_dat_g:pd.DataFrame, pos_g : np.array) -> np.array: # for a single group on single run, find regret wrt best in hind
+                                         X_dat_g:pd.DataFrame, y_dat_g:pd.DataFrame, pos_g : np.array) -> (np.array, np.array): # for a single group on single run, find regret wrt best in hind
             sse = [] # sum of squared errors till that pos p
             for p in pos_g:
                 X_batch = X_dat_g[:p]
@@ -155,3 +155,29 @@ def plot_regret_curve_with_std(gwise_obj: BuildGroupwise_diffseeds, dir_name:str
         plt.title(gname)
         plt.savefig(dir_name + '/regret_'+ gname +'.pdf')
         plt.show()
+
+def get_end_regret_gw_df(gwise_obj: BuildGroupwise_diffseeds) -> pd.DataFrame:
+    df_rows = []
+    for g_ind, gname in enumerate(gwise_obj.group_names):
+        gwise_obj.regret_Anh_groupwise_array[g_ind] = np.array(gwise_obj.regret_Anh_groupwise_array[g_ind]) # all 10 values in the row have same dim, so can make np array
+        gwise_obj.regret_Base_groupwise_array[g_ind] = np.array(gwise_obj.regret_Base_groupwise_array[g_ind])
+        mean_regend_Base, std_regend_Base = gwise_obj.regret_Base_groupwise_array[g_ind].mean(axis = 0)[-1], gwise_obj.regret_Base_groupwise_array[g_ind].std(axis = 0)[-1]
+        mean_regend_Anh, std_regend_Anh = gwise_obj.regret_Anh_groupwise_array[g_ind].mean(axis = 0)[-1], gwise_obj.regret_Anh_groupwise_array[g_ind].std(axis = 0)[-1]
+        df_rows.append([gname, mean_regend_Base, std_regend_Base, mean_regend_Anh, std_regend_Anh])
+    return pd.DataFrame(df_rows, columns = ['group_name', 'mean_regend_Base', 'std_regend_Base', 'mean_regend_Anh', 'std_regend_Anh'])
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
