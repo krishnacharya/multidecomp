@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from bilevel.manual_inv_LinearExpert import Manual_inv_LinearExpert
+# from bilevel.manual_inv_LinearExpert import Manual_inv_LinearExpert
+from bilevel.VAW_forecaster import VovkAzouryWarmuth_forecaster
 from bilevel.build_all_models import *
 from collections import defaultdict
 
@@ -57,9 +58,9 @@ class BuildGroupwise_diffseeds:
 
             dirname_base = './models_adult/baseline/'
             filename = 'manual_ridge_seed='+ str(seed)+ ' '
-            b_ridgebase = build_baseline_alwayson(dirname_base, filename, A_t_shuf_np, Manual_inv_LinearExpert(X_dat_np, y_dat_np, l2_pen = l2_pen))
+            b_ridgebase = build_baseline_alwayson(dirname_base, filename, A_t_shuf_np, VovkAzouryWarmuth_forecaster(X_dat_np, y_dat_np, l2_pen = l2_pen))
             dirname_Anh = './models_adult/Anh/'
-            experts = [Manual_inv_LinearExpert(X_dat_np, y_dat_np, l2_pen = l2_pen) for _ in range(self.N)]
+            experts = [VovkAzouryWarmuth_forecaster(X_dat_np, y_dat_np, l2_pen = l2_pen) for _ in range(self.N)]
             b_Anh = build_Anh(dirname_Anh, filename, A_t_shuf_np, experts)
             add_to_dic_res(b_ridgebase, b_Anh)
             self.base_obj_list.append(b_ridgebase)
@@ -165,19 +166,3 @@ def get_end_regret_gw_df(gwise_obj: BuildGroupwise_diffseeds) -> pd.DataFrame:
         mean_regend_Anh, std_regend_Anh = gwise_obj.regret_Anh_groupwise_array[g_ind].mean(axis = 0)[-1], gwise_obj.regret_Anh_groupwise_array[g_ind].std(axis = 0)[-1]
         df_rows.append([gname, mean_regend_Base, std_regend_Base, mean_regend_Anh, std_regend_Anh])
     return pd.DataFrame(df_rows, columns = ['group_name', 'mean_regend_Base', 'std_regend_Base', 'mean_regend_Anh', 'std_regend_Anh'])
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
