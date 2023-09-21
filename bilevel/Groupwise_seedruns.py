@@ -165,19 +165,3 @@ def get_end_regret_gw_df(gwise_obj: BuildGroupwise_diffseeds) -> pd.DataFrame:
         mean_regend_Anh, std_regend_Anh = gwise_obj.regret_Anh_groupwise_array[g_ind].mean(axis = 0)[-1], gwise_obj.regret_Anh_groupwise_array[g_ind].std(axis = 0)[-1]
         df_rows.append([gname, mean_regend_Base, std_regend_Base, mean_regend_Anh, std_regend_Anh])
     return pd.DataFrame(df_rows, columns = ['group_name', 'mean_regend_Base', 'std_regend_Base', 'mean_regend_Anh', 'std_regend_Anh'])
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
