@@ -92,19 +92,19 @@ class BuildGroupwise_diffseeds:
                 X_batch_np = X_batch.to_numpy()
                 y_batch_np = y_batch.to_numpy()
                 theta_ls, _, _, _ = lstsq(X_batch_np, y_batch_np)
-                y_pred_ls = X_batch_np @ theta_ls
-                y_pred_ls = np.clip(y_pred_ls, 0.0, 1.0)# new clipped
+                y_pred_ls = X_batch_np @ theta_ls # unclipped
+                # y_pred_ls = np.clip(y_pred_ls, 0.0, 1.0)# clipped
                 sse.append(np.sum((y_pred_ls - y_batch_np)**2))
             sse = np.array(sse)
             Base_reg_g = cl_base_g[pos_g] - sse
             Anh_reg_g = cl_ada_g[pos_g] - sse # only returning regret on num_points in Tg sequence
-            return Base_reg_g, Anh_reg_g
-
+            return sse, Base_reg_g, Anh_reg_g
+        
         self.pos = [] # linspace for each group, doesnt depend on shuffling order, its just poitns along Tg
         for Tg in self.group_sizes: # setting the positions along Tg for the regret curve 
             num_points = min(100, Tg) # TODO change this to custom integer passed in build_regret_curve
-            self.pos.append(np.linspace(Tg // num_points, Tg-1, dtype = int, num = num_points))
-
+            self.pos.append(np.linspace(Tg // num_points, Tg - 1, dtype = int, num = num_points))
+        self.cumloss_best_hind = [[0 for x in range(self.num_runs)] for y in range(self.N)] # to assign to num_points calculated below
         self.regret_Base_groupwise_array = [[0 for x in range(self.num_runs)] for y in range(self.N)]
         self.regret_Anh_groupwise_array = [[0 for x in range(self.num_runs)] for y in range(self.N)] # N rows, 10 columns for 10 seeds, regret to best in hindsight for Anh
         for ind in range(self.num_runs): # corresponding b_Anh has the Anh obj for that random seed
@@ -117,8 +117,9 @@ class BuildGroupwise_diffseeds:
                 indices_g = (A_t_shuf[gname] == 1)
                 X_dat_g = X_dat_shuf[indices_g] #only has gname==1 active rows
                 y_dat_g = y_dat_shuf[indices_g]
-                Base_reg_g, Anh_reg_g = get_Anh_regret_best_hindsight(b_Anh.Anh.cumloss_groupwise_ada[g_ind], b_Base.expert.cumloss_groupwise[g_ind], \
+                sse_g, Base_reg_g, Anh_reg_g = get_Anh_regret_best_hindsight(b_Anh.Anh.cumloss_groupwise_ada[g_ind], b_Base.expert.cumloss_groupwise[g_ind], \
                                                                                             X_dat_g, y_dat_g, self.pos[g_ind])
+                self.cumloss_best_hind[g_ind][ind] = sse_g
                 self.regret_Base_groupwise_array[g_ind][ind] = Base_reg_g
                 self.regret_Anh_groupwise_array[g_ind][ind] = Anh_reg_g
 
@@ -162,9 +163,11 @@ def get_end_regret_gw_df(gwise_obj: BuildGroupwise_diffseeds) -> pd.DataFrame:
     for g_ind, gname in enumerate(gwise_obj.group_names):
         gwise_obj.regret_Anh_groupwise_array[g_ind] = np.array(gwise_obj.regret_Anh_groupwise_array[g_ind]) # all 10 values in the row have same dim, so can make np array
         gwise_obj.regret_Base_groupwise_array[g_ind] = np.array(gwise_obj.regret_Base_groupwise_array[g_ind])
+        gwise_obj.cumloss_best_hind[g_ind] = np.array(gwise_obj.cumloss_best_hind[g_ind])
         mean_regend_Base, std_regend_Base = gwise_obj.regret_Base_groupwise_array[g_ind].mean(axis = 0)[-1], gwise_obj.regret_Base_groupwise_array[g_ind].std(axis = 0)[-1]
         mean_regend_Anh, std_regend_Anh = gwise_obj.regret_Anh_groupwise_array[g_ind].mean(axis = 0)[-1], gwise_obj.regret_Anh_groupwise_array[g_ind].std(axis = 0)[-1]
-        df_rows.append([gname, gwise_obj.group_sizes[g_ind], mean_regend_Base, std_regend_Base, mean_regend_Anh, std_regend_Anh])
-    return pd.DataFrame(df_rows, columns = ['group_name', 'group_size', 'mean_regend_Base', 'std_regend_Base', 'mean_regend_Anh', 'std_regend_Anh'])
+        mean_cumloss_bhind, std_cumloss_bhind = gwise_obj.cumloss_best_hind[g_ind].mean(axis = 0)[-1], gwise_obj.cumloss_best_hind[g_ind].std(axis = 0)[-1] # last time index's cumulative loss
+        df_rows.append([gname, gwise_obj.group_sizes[g_ind], mean_regend_Base, std_regend_Base, mean_regend_Anh, std_regend_Anh, mean_cumloss_bhind, std_cumloss_bhind])
+    return pd.DataFrame(df_rows, columns = ['group_name', 'group_size', 'mean_regend_Base', 'std_regend_Base', 'mean_regend_Anh', 'std_regend_Anh', 'mean_hindsight', 'std_hindsight'])
 
 

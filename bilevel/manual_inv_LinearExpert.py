@@ -40,7 +40,8 @@ class Manual_inv_LinearExpert(Expert):
       THEN update_t(y_t) will update with the observed label and loss.
     '''
     x_t = self.X_dat_np[t] # has shape (dim,)
-    yhatt = np.clip(np.dot(x_t, self.theta_pred), 0.0, 1.0) #prediction clipped to [0,1]
+    # yhatt = np.clip(np.dot(x_t, self.theta_pred), 0.0, 1.0) #prediction clipped to [0,1]
+    yhatt = np.dot(x_t, self.theta_pred)
     self.y_predarr.append(yhatt)
 
   
