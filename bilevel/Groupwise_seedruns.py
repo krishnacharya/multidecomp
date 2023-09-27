@@ -92,8 +92,8 @@ class BuildGroupwise_diffseeds:
                 X_batch_np = X_batch.to_numpy()
                 y_batch_np = y_batch.to_numpy()
                 theta_ls, _, _, _ = lstsq(X_batch_np, y_batch_np)
-                y_pred_ls = X_batch_np @ theta_ls
-                y_pred_ls = np.clip(y_pred_ls, 0.0, 1.0)# new clipped
+                y_pred_ls = X_batch_np @ theta_ls # unclipped
+                # y_pred_ls = np.clip(y_pred_ls, 0.0, 1.0)# clipped
                 sse.append(np.sum((y_pred_ls - y_batch_np)**2))
             sse = np.array(sse)
             Base_reg_g = cl_base_g[pos_g] - sse
