@@ -170,4 +170,3 @@ def get_end_regret_gw_df(gwise_obj: BuildGroupwise_diffseeds) -> pd.DataFrame:
         df_rows.append([gname, gwise_obj.group_sizes[g_ind], mean_regend_Base, std_regend_Base, mean_regend_Anh, std_regend_Anh, mean_cumloss_bhind, std_cumloss_bhind])
     return pd.DataFrame(df_rows, columns = ['group_name', 'group_size', 'mean_regend_Base', 'std_regend_Base', 'mean_regend_Anh', 'std_regend_Anh', 'mean_hindsight', 'std_hindsight'])
 
-
