@@ -32,7 +32,6 @@ class Manual_inv_LinearExpert(Expert):
     self.previnv = sherman_inv(self.previnv, self.X_dat_np[t].reshape(-1,1)) # prev inv has shape dimxdim, the second term has shape (dimx1)
     self.theta_pred = self.previnv @ self.xt_labelprodsum # theta_predarr has shape (dim,) 
     
-    
   def get_ypred_t(self, t) -> None:
     '''
 

@@ -10,9 +10,12 @@ from bilevel.ExpertsAbstract import Expert
 from bilevel.utils import  fill_subsequence_losses
 
 class build_Anh:
-    def __init__(self, dir_name : str, filename: str, A_t: np.ndarray, experts: list[Expert]):
+    def __init__(self, dir_name : str, filename: str, A1_t: np.ndarray, A2_t: np.ndarray, experts: list[Expert]):
         '''
         Assuming that the dataframe has been processed already (make dataframe management class pipeline)
+        NOTE
+        A1_t is used for the anh meta experts
+        A2_t is used for subsequnce regret calculation
 
         groups:
             list of sensitive groups, e.g. 2 sexes, 9 races
@@ -22,19 +25,19 @@ class build_Anh:
         self.timestamp = time.strftime("%Y%m%d-%H%M%S")
         self.dir_name = dir_name
         self.filename = filename + self.timestamp
-        self.A_t = A_t
-        self.T = A_t.shape[0]
-        self.N = A_t.shape[1]
+        self.A1_t = A1_t
+        self.A2_t = A2_t
+        self.T = A1_t.shape[0]
         self.experts = experts
         self.build()
 
     def build(self):
         # self.Anh = Adanormal_sleepingexps(self.A_t, self.experts) #adanormal hedge, experts already have dataframes
-        self.Anh = Adanormal_sleepingexps(self.A_t, self.experts)
+        self.Anh = Adanormal_sleepingexps(self.A1_t, self.experts)
         for t in tqdm(range(self.T)):
             self.Anh.get_prob_over_experts(t) #get probability over meta-experts
             self.Anh.update_metaexps_loss(t) # update internal states of the meta-experts
-        self.Anh.build_cumloss_curve()
+        self.Anh.cumloss_groupwise_ada = fill_subsequence_losses(self.Anh.loss_ada_t_arr, self.A2_t) # changed to use utils
         self.Anh.cleanup() #compact size after cleanup, only essential external varaibles saved
         # save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
         # joblib.dump(self.Anh, save_loc) # removed saving of anh object
@@ -58,7 +61,7 @@ class build_baseline_alwayson:
         for t in tqdm(range(self.T)):
             self.expert.get_ypred_t(t)
             self.expert.update_t(t)
-        self.expert.cumloss_groupwise = fill_subsequence_losses(self.expert, self.A_t)
+        self.expert.cumloss_groupwise = fill_subsequence_losses(self.expert.loss_tarr, self.A_t)
         self.expert.cleanup()
         # save_loc = f'''{self.dir_name}/{self.filename}.pkl'''
         # joblib.dump(self.expert, save_loc)
