@@ -31,7 +31,8 @@ class BuildGroupwise_diffseeds:
         self.A1_t = A1_t # used for the adanormal hedge group meta experts
         self.A2_t = A2_t # used only for masking then calculating subsequnece regret for arbitray subsequences
         self.T = A1_t.shape[0] # number of rows in dataframe
-        self.N = A1_t.shape[1] # number of group meta experts in Adanormal hedge
+        self.N_metaexp = A1_t.shape[1] # number of group meta experts in Adanormal hedge # NOTE fix any mismatch of N of meta expert and number of subsequences
+        self.N_subseq = A2_t.shape[1] # number of subsequences on whcih to calculae regret
         self.group_names = list(A2_t.columns) #these group names could be seperate from those we use for adanormal hedge group exeprts
         self.group_sizes = list(A2_t.sum(axis = 0).astype(int)) # same comment above
         self.rand_seeds =  [473, 503, 623, 550, 692, 989, 617, 458, 301, 205] # random seeds used to shuffle dataframe and group, to get mean & variance of cumulative loss
@@ -67,9 +68,9 @@ class BuildGroupwise_diffseeds:
 
             dirname_base = './models_adult/baseline/'
             filename = 'manual_ridge_seed='+ str(seed)+ ' '
-            b_ridgebase = build_baseline_alwayson(dirname_base, filename, A1_t_shuf_np, Manual_inv_LinearExpert(X_dat_np, y_dat_np, l2_pen = l2_pen))
+            b_ridgebase = build_baseline_alwayson(dirname_base, filename, A2_t_shuf_np, Manual_inv_LinearExpert(X_dat_np, y_dat_np, l2_pen = l2_pen))
             dirname_Anh = './models_adult/Anh/'
-            experts = [Manual_inv_LinearExpert(X_dat_np, y_dat_np, l2_pen = l2_pen) for _ in range(self.N)]
+            experts = [Manual_inv_LinearExpert(X_dat_np, y_dat_np, l2_pen = l2_pen) for _ in range(self.N_metaexp)]
             b_Anh = build_Anh(dirname_Anh, filename, A1_t_shuf_np, A2_t_shuf_np, experts)
             add_to_dic_res(b_ridgebase, b_Anh)
             self.base_obj_list.append(b_ridgebase)
@@ -114,9 +115,9 @@ class BuildGroupwise_diffseeds:
         for Tg in self.group_sizes: # setting the positions along Tg for the regret curve 
             num_points = min(100, Tg) # TODO change this to custom integer passed in build_regret_curve
             self.pos.append(np.linspace(Tg // num_points, Tg - 1, dtype = int, num = num_points))
-        self.cumloss_best_hind = [[0 for x in range(self.num_runs)] for y in range(self.N)] # to assign to num_points calculated below
-        self.regret_Base_groupwise_array = [[0 for x in range(self.num_runs)] for y in range(self.N)]
-        self.regret_Anh_groupwise_array = [[0 for x in range(self.num_runs)] for y in range(self.N)] # N rows, 10 columns for 10 seeds, regret to best in hindsight for Anh
+        self.cumloss_best_hind = [[0 for x in range(self.num_runs)] for y in range(self.N_subseq)] # to assign to num_points calculated below
+        self.regret_Base_groupwise_array = [[0 for x in range(self.num_runs)] for y in range(self.N_subseq)]
+        self.regret_Anh_groupwise_array = [[0 for x in range(self.num_runs)] for y in range(self.N_subseq)] # N rows, 10 columns for 10 seeds, regret to best in hindsight for Anh
         for ind in range(self.num_runs): # corresponding b_Anh has the Anh obj for that random seed
             b_Base, b_Anh = self.base_obj_list[ind], self.Anh_obj_list[ind]
             seed = self.rand_seeds[ind] # use this to get the X_dat_g, y_dat_g
