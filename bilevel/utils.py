@@ -94,13 +94,13 @@ def load_pickle(file_source):
     pickle_in = open(file_source,"rb")
     return pickle.load(pickle_in)
 
-def fill_subsequence_losses(expert : Expert, A_t : np.ndarray) -> list[np.ndarray]:
+def fill_subsequence_losses(loss_arr, A_t : np.ndarray) -> list[np.ndarray]: # use A2_t here
     cumloss_groupwise = []
     N = A_t.shape[1]
     loss_groupwise = []
-    loss_tarr = np.array(expert.loss_tarr)
+    loss_arr = np.array(loss_arr)
     for gnum in range(N): # build cumulative loss for  on each group subsequence
-        loss_groupwise.append(loss_tarr[A_t[:, gnum].astype(bool)]) # select those losses where group gnum active
+        loss_groupwise.append(loss_arr[A_t[:, gnum].astype(bool)]) # select those losses where group gnum active
         cumloss_groupwise.append(np.cumsum(loss_groupwise[-1])) #cumulative sum of the previous
     return cumloss_groupwise
    

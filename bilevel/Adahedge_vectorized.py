@@ -68,18 +68,18 @@ class Adanormal_sleepingexps:
     self.R_t += self.r_t #update regret cumulative sum
     self.C_t += abs(self.r_t) #update abs reg cumulative sum
 
-  def build_cumloss_curve(self):
-    '''
-      CALLED once at the end to compute regret curve for Adanormal hedge
-      bestsqloss list of size |G| has the best square loss on the subsequence for each group, each element of bestsqloss is a list itself of length Tg
-      Build ada normal cumulative loss on each subsequence defined by groups
-      term1 in the multigroup regret (performance of algorithm on subsequences)
-    '''
-    self.cumloss_ada_allgroups = np.cumsum(self.loss_ada_t_arr.reshape(-1, 1) * self.A_t, axis = 0) # reshaped loss_ada_t_arr to shape (T, 1) so that brodcasted
-    self.cumloss_meta_exps = np.cumsum(self.l_t, axis = 0)
-    for ind in range(self.N):
-      self.cumloss_groupwise_ada.append(self.cumloss_ada_allgroups[:, ind][self.A_t[:, ind].astype(bool)]) # shape Tgx1 collects the cumulative loss curve of adanormal hedge on subsequence given by group #ind, only picks roudns in which group active
-      self.cumloss_groupwise_metaexp.append(self.cumloss_meta_exps[:, ind][self.A_t[:, ind].astype(bool)]) # not actually implementable
+  # def build_cumloss_curve(self):
+  #   '''
+  #     CALLED once at the end to compute regret curve for Adanormal hedge
+  #     bestsqloss list of size |G| has the best square loss on the subsequence for each group, each element of bestsqloss is a list itself of length Tg
+  #     Build ada normal cumulative loss on each subsequence defined by groups
+  #     term1 in the multigroup regret (performance of algorithm on subsequences)
+  #   '''
+  #   self.cumloss_ada_allgroups = np.cumsum(self.loss_ada_t_arr.reshape(-1, 1) * self.A_t, axis = 0) # reshaped loss_ada_t_arr to shape (T, 1) so that brodcasted
+  #   self.cumloss_meta_exps = np.cumsum(self.l_t, axis = 0)
+  #   for ind in range(self.N):
+  #     self.cumloss_groupwise_ada.append(self.cumloss_ada_allgroups[:, ind][self.A_t[:, ind].astype(bool)]) # shape Tgx1 collects the cumulative loss curve of adanormal hedge on subsequence given by group #ind, only picks roudns in which group active
+  #     self.cumloss_groupwise_metaexp.append(self.cumloss_meta_exps[:, ind][self.A_t[:, ind].astype(bool)]) # not actually implementable
   
   def cleanup(self):
     '''
